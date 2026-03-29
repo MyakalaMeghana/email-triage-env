@@ -1,0 +1,13 @@
+name: email-triage-env
+description: AI environment for managing emails
+
+actions:
+  - read
+  - delete
+  - reply
+
+observation:
+  emails: list
+  remaining: int
+
+reward: float
