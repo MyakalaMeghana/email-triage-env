@@ -5,100 +5,84 @@ from env import EmailEnv
 from models import Action
 from tasks import evaluate_all
 
-# -----------------------------
-# CONFIG (ENV VARIABLES)
-# -----------------------------
-API_BASE_URL = os.getenv("API_BASE_URL") or "https://api.openai.com/v1"
-API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN")
-MODEL_NAME = os.getenv("MODEL_NAME") or "gpt-4o-mini"
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-MAX_STEPS = 10
+def choose_action(email):
+    prompt = f"""
+    You are an intelligent email assistant.
 
-# Initialize client
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=API_KEY
-)
+    Email: {email}
 
+    Choose ONLY one action from:
+    read / delete / reply
 
-# -----------------------------
-# SIMPLE BASELINE AGENT
-# -----------------------------
-def choose_action(email_text):
-    """
-    Rule-based baseline (deterministic)
-    This ensures reproducible results
+    Rules:
+    - Spam → delete
+    - Urgent → reply
+    - Normal → read
+
+    Only return the action word.
     """
 
-    email_text = email_text.lower()
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
 
-    if "spam" in email_text:
-        return Action(action_type="delete")
-    elif "urgent" in email_text:
-        return Action(action_type="reply")
-    elif "meeting" in email_text:
-        return Action(action_type="read")
-    else:
-        return Action(action_type="read")
+        action = response.choices[0].message.content.strip().lower()
+
+        if action not in ["read", "delete", "reply"]:
+            action = "read"
+
+    except Exception as e:
+        print("LLM error, fallback used:", e)
+        action = "read"
+
+    return Action(action_type=action)
 
 
-# -----------------------------
-# MAIN EXECUTION
-# -----------------------------
 def main():
-    print("Starting Email Triage Environment...\n")
+    print("Starting AI Email Triage Environment...")
 
     env = EmailEnv()
     state = env.reset()
 
     total_reward = 0
-    step_count = 0
+    steps = 0
 
-    print("Initial State:", state, "\n")
-
-    # Run episode
-    for step in range(MAX_STEPS):
+    for step in range(10):
         if not state.emails:
-            print("No emails left.")
             break
 
         current_email = state.emails[0]
+        print(f"\nStep {step+1}")
+        print("Email:", current_email)
 
-        # Baseline action
         action = choose_action(current_email)
+        print("AI Action:", action.action_type)
 
-        # Step environment
         state, reward, done, _ = env.step(action)
 
-        total_reward += reward.score
-        step_count += 1
+        print("Reward:", reward.score)
+        print("Remaining Emails:", state.remaining)
 
-        print(f"Step {step+1}")
-        print(f"Email: {current_email}")
-        print(f"Action: {action.action_type}")
-        print(f"Reward: {reward.score}")
-        print(f"Next State: {state}")
-        print("-" * 40)
+        total_reward += reward.score
+        steps += 1
 
         if done:
-            print("Episode finished.\n")
             break
 
-    # -----------------------------
-    # FINAL RESULTS
-    # -----------------------------
     print("\nFinal Total Reward:", total_reward)
 
-    # Evaluate tasks (0.0 → 1.0)
-    scores = evaluate_all(total_reward, step_count)
+    scores = evaluate_all(total_reward, steps)
 
-    print("Task Scores:")
-    for task, score in scores.items():
-        print(f"{task}: {score}")
+    print("\nTask Scores:")
+    for k, v in scores.items():
+        print(f"{k}: {v}")
 
 
-# -----------------------------
-# RUN
-# -----------------------------
 if __name__ == "__main__":
     main()
