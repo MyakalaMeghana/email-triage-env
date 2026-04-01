@@ -7,5 +7,9 @@ authors = [
 ]
 dependencies = [
     "pydantic",
-    "openai"
+    "openai",
+    "openenv>=0.2.0"
 ]
+
+[project.scripts]
+server = "app:main"
