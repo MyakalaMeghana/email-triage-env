@@ -3,8 +3,9 @@ name = "email-triage-env"
 version = "0.1.0"
 description = "OpenEnv Email Triage Environment"
 authors = [
-    {name = "Meghana"}
+    { name = "Meghana" }
 ]
+
 dependencies = [
     "pydantic",
     "openai",
