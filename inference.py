@@ -19,20 +19,25 @@ def main():
     state = env.reset()
 
     total_reward = 0
+    step_count = 0
+
+    print("[START] task=email-triage", flush=True)
 
     while state.emails:
         email = state.emails[0]
-
         action = choose_action(email)
 
         state, reward, done, _ = env.step(action)
 
+        step_count += 1
         total_reward += reward.score
+
+        print(f"[STEP] step={step_count} reward={reward.score}", flush=True)
 
         if done:
             break
 
-    print("Total Reward:", total_reward)
+    print(f"[END] task=email-triage score={total_reward} steps={step_count}", flush=True)
 
 
 if __name__ == "__main__":
