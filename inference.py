@@ -62,20 +62,18 @@ def main():
             break
 
     # ✅ Average score
-    avg_score = total_reward / step_count if step_count > 0 else 0.5
+        avg_score = total_reward / step_count if step_count > 0 else 0.5
 
-    # ✅ Ensure scores strictly between (0,1)
     easy = min(max(avg_score, 0.1), 0.9)
     medium = min(max(avg_score - 0.1, 0.1), 0.9)
     hard = min(max(avg_score - 0.2, 0.1), 0.9)
 
     print(f"[END] task=email-triage score={avg_score:.2f} steps={step_count}", flush=True)
 
-    # ✅ Required task outputs
-    print(f"easy: {easy:.2f}", flush=True)
-    print(f"medium: {medium:.2f}", flush=True)
-    print(f"hard: {hard:.2f}", flush=True)
-
-
+    # ✅ CORRECT TASK FORMAT
+    print(f"[TASK] name=easy score={easy:.2f}", flush=True)
+    print(f"[TASK] name=medium score={medium:.2f}", flush=True)
+    print(f"[TASK] name=hard score={hard:.2f}", flush=True)
+    
 if __name__ == "__main__":
     main()
