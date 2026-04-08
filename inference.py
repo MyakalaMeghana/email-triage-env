@@ -1,17 +1,37 @@
+import os
+from openai import OpenAI
+
 from env import EmailEnv
 from models import Action
 
-def choose_action(email):
-    email = email.lower()
 
-    if "urgent" in email:
-        return Action(action_type="reply")
-    elif "spam" in email:
-        return Action(action_type="delete")
-    elif "meeting" in email:
-        return Action(action_type="read")
-    else:
-        return Action(action_type="read")
+# ✅ Use PROVIDED environment variables
+client = OpenAI(
+    base_url=os.environ.get("API_BASE_URL"),
+    api_key=os.environ.get("API_KEY")
+)
+
+
+def choose_action(email):
+    prompt = f"""
+    Email: {email}
+    Choose one action: read, delete, or reply.
+    Only return one word.
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0
+        )
+
+        action = response.choices[0].message.content.strip().lower()
+
+    except:
+        action = "read"  # fallback
+
+    return Action(action_type=action)
 
 
 def main():
@@ -25,6 +45,7 @@ def main():
 
     while state.emails:
         email = state.emails[0]
+
         action = choose_action(email)
 
         state, reward, done, _ = env.step(action)
